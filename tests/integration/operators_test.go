@@ -82,4 +82,21 @@ var _ = Describe("operators", func() {
 			expectOnlyAllowedExecutableFiles(workDir)
 		})
 	})
+
+	Describe("catalog digest rebuild tagging", func() {
+		iscFile := filepath.Join("operators", "isc-operator-catalog-digest.yaml")
+
+		It("should tag rebuilt catalog images with a value matching the manifest digest", func() {
+			By("running mirrorToMirror with digest-pinned catalog references")
+			result, err := runner.MirrorToMirror(ctx, filepath.Join(iscDir, iscFile), workDir, testRegistry.Endpoint(),
+				"--remove-signatures=true", "--dest-tls-verify=false")
+			expectOcMirrorCommandSuccess(result, err)
+
+			By("verifying mirrored content exists in the registry")
+			expectSuccessfulMirrorInRegistry(filepath.Join(iscDir, iscFile), *testRegistry)
+
+			By("verifying the rebuilt catalog tag matches the fetched manifest digest")
+			expectRebuiltTagMatchesDigest(ctx, *testRegistry, filepath.Join(iscDir, iscFile))
+		})
+	})
 })
